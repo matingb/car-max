@@ -22,7 +22,7 @@ export default function PanelArreglos({ arreglosData, granularity, stats, header
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DashboardSectionCard title="Arreglos realizados" headerAction={headerAction}>
-                <GraficoArreglos data={arreglosData} granularity={granularity} />
+                <GraficoArreglos id="arreglos-principal" data={arreglosData} granularity={granularity} />
             </DashboardSectionCard>
 
             <DashboardSectionCard>
@@ -30,13 +30,14 @@ export default function PanelArreglos({ arreglosData, granularity, stats, header
                     <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column" }}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Volumen de trabajo por categoría</h4>
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                            <VolumenDeTrabajo items={stats?.facturacionPorTipo ?? []} />
+                            <VolumenDeTrabajo id="arreglos-volumen" items={stats?.facturacionPorTipo ?? []} />
                         </div>
                     </div>
                     <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column" }}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Estado de pago</h4>
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                             <EstadoCobroArreglos
+                                id="arreglos-estado-pago"
                                 total={stats?.totals?.arreglos ?? null}
                                 cobrados={stats?.arreglos?.cobrados ?? null}
                                 parciales={stats?.arreglos?.parciales ?? null}

@@ -14,6 +14,7 @@ import { formatArs, formatNumberAr } from "@/lib/format";
 import GraficoTooltip from "./GraficoTooltip";
 
 type Props = {
+    id?: string;
     total?: number | null;
     cobrados?: number | null;
     parciales?: number | null;
@@ -45,6 +46,7 @@ const tooltipRows = [
 ];
 
 export default function EstadoCobroArreglos({
+    id = "estado-cobro-arreglos",
     total,
     cobrados,
     parciales,
@@ -140,6 +142,7 @@ export default function EstadoCobroArreglos({
     return (
         <div style={{ width: "100%" }}>
             <ChartContainer
+                id={id}
                 config={chartConfig}
                 className={className ?? "w-full "}
             >

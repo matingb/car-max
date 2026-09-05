@@ -14,6 +14,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type Granularity } from "@/lib/dashboard/aggregation";
 
 type Props = {
+    id?: string;
     ingresosPorPeriodo?: Array<{ label: string; mano_de_obra: number; repuestos: number; ventas: number }>;
     gastosPorPeriodo?: Array<{ label: string; repuestos: number; sueldos: number; eventuales: number }>;
     granularity?: Granularity;
@@ -23,7 +24,7 @@ function formatCurrency(value: number) {
     return `$${value.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 }
 
-export default function GraficoBalance({ ingresosPorPeriodo, gastosPorPeriodo, granularity }: Props) {
+export default function GraficoBalance({ id = "grafico-balance", ingresosPorPeriodo, gastosPorPeriodo, granularity }: Props) {
     const isMonthly = granularity === "month";
 
     const { chartData, monthlyPoint, config } = useMemo(() => {
@@ -57,7 +58,7 @@ export default function GraficoBalance({ ingresosPorPeriodo, gastosPorPeriodo, g
 
     if (isMonthly) {
         return (
-            <ChartContainer config={config} className="w-full h-[220px]">
+            <ChartContainer id={id} config={config} className="w-full h-[220px]">
                 <BarChart data={monthlyPoint} margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" hide />
@@ -78,7 +79,7 @@ export default function GraficoBalance({ ingresosPorPeriodo, gastosPorPeriodo, g
     }
 
     return (
-        <ChartContainer config={config} className="w-full h-[220px]">
+        <ChartContainer id={id} config={config} className="w-full h-[220px]">
             <BarChart data={chartData} margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis

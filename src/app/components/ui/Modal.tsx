@@ -9,15 +9,17 @@ import { COLOR } from "@/theme/theme";
 
 type Props = {
   open: boolean;
-  title: string;
+  title?: string;
   children: React.ReactNode;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void | Promise<void>;
-  submitText: string;
+  onSubmit?: (e: React.FormEvent) => void | Promise<void>;
+  submitText?: string;
   submitting?: boolean;
   disabledSubmit?: boolean;
   modalStyle?: React.CSSProperties;
   modalError?: { titulo: string; descripcion?: React.ReactNode } | null;
+  hideHeader?: boolean;
+  hideFooter?: boolean;
 };
 
 export default function Modal({
@@ -26,18 +28,22 @@ export default function Modal({
   children,
   onClose,
   onSubmit,
-  submitText,
+  submitText = "Guardar",
   submitting = false,
   disabledSubmit = false,
   modalStyle,
   modalError,
+  hideHeader = false,
+  hideFooter = false,
 }: Props) {
   const titleId = useId();
   const restoreScrollRef = useRef<null | (() => void)>(null);
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await onSubmit(e);
+    if (onSubmit) {
+      await onSubmit(e);
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -116,11 +122,13 @@ export default function Modal({
       onPointerUp={(e) => e.stopPropagation()}
     >
       <Card style={{ ...styles.modal, ...modalStyle }}>
-          <div style={styles.headerRow}>
-            <h2 id={titleId} style={styles.title} data-testid="modal-title">
-              {title}
-            </h2>
-          </div>
+          {!hideHeader && title ? (
+            <div style={styles.headerRow}>
+              <h2 id={titleId} style={styles.title} data-testid="modal-title">
+                {title}
+              </h2>
+            </div>
+          ) : null}
 
           <form onSubmit={handleFormSubmit}>
             {children}
@@ -132,24 +140,26 @@ export default function Modal({
                 ) : null}
               </div>
             ) : null}
-            <div style={styles.footer}>
-              <button
-                type="button"
-                style={styles.cancel}
-                onClick={onClose}
-                disabled={submitting}
-                data-testid="modal-cancel"
-              >
-                Cancelar
-              </button>
-              <Button
-                type="submit"
-                text={submitting ? "Guardando..." : submitText}
-                disabled={isSubmitDisabled}
-                dataTestId="modal-submit"
-                hideTextOnMobile={false}
-              />
-            </div>
+            {!hideFooter ? (
+              <div style={styles.footer}>
+                <button
+                  type="button"
+                  style={styles.cancel}
+                  onClick={onClose}
+                  disabled={submitting}
+                  data-testid="modal-cancel"
+                >
+                  Cancelar
+                </button>
+                <Button
+                  type="submit"
+                  text={submitting ? "Guardando..." : submitText}
+                  disabled={isSubmitDisabled}
+                  dataTestId="modal-submit"
+                  hideTextOnMobile={false}
+                />
+              </div>
+            ) : null}
           </form>
         </Card>
     </div>

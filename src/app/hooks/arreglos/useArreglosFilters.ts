@@ -66,6 +66,7 @@ function matchesEstadoPagoFilter(arreglo: Arreglo, estadoPagoFilter: string) {
   if (estadoPago !== "PENDIENTE" && estadoPago !== "PARCIAL" && estadoPago !== "PAGADO") {
     return true;
   }
+  if (arreglo.estado === "PRESUPUESTO") return false;
   if (estadoPago === "PAGADO") return arreglo.esta_pago === true;
 
   if (arreglo.esta_pago === true) return false;

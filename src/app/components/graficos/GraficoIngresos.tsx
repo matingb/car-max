@@ -14,6 +14,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { type Granularity } from "@/lib/dashboard/aggregation";
 
 type Props = {
+    id?: string;
     data?: Array<{ label: string; mano_de_obra: number; repuestos: number; ventas: number }>;
     granularity?: Granularity;
 };
@@ -28,7 +29,7 @@ const LABELS: Record<string, string> = {
     ventas: "Ventas",
 };
 
-export default function GraficoIngresos({ data, granularity }: Props) {
+export default function GraficoIngresos({ id = "grafico-ingresos", data, granularity }: Props) {
     const isMonthly = granularity === "month";
 
     const { chartData, monthlyPoint, config } = useMemo(() => {
@@ -59,7 +60,7 @@ export default function GraficoIngresos({ data, granularity }: Props) {
 
     if (isMonthly) {
         return (
-            <ChartContainer config={config} className="w-full h-[220px]">
+            <ChartContainer id={id} config={config} className="w-full h-[220px]">
                 <BarChart data={monthlyPoint} margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" hide />
@@ -81,7 +82,7 @@ export default function GraficoIngresos({ data, granularity }: Props) {
     }
 
     return (
-        <ChartContainer config={config} className="w-full h-[220px]">
+        <ChartContainer id={id} config={config} className="w-full h-[220px]">
             <BarChart data={chartData} margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis

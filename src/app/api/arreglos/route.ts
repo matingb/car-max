@@ -128,6 +128,10 @@ export async function POST(req: Request) {
     }
 
     const estadoValue = estadoRaw as EstadoArreglo;
+
+    if (estadoValue === "PRESUPUESTO" && estaPagoValue) {
+        return Response.json({ error: "No se puede registrar como pago un arreglo en estado PRESUPUESTO" }, { status: 400 });
+    }
     const detalleFormularioConfigId = detalle_formulario
         ? String(detalle_formulario.formulario_id ?? detalle_formulario.config_id ?? "").trim()
         : "";

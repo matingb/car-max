@@ -255,6 +255,33 @@ describe("Mutaciones /api/arreglos/[id]", () => {
     expect(arregloService.updateById).toHaveBeenCalledTimes(1);
   });
 
+  it("PUT: rechaza el cambio a estado PRESUPUESTO si el arreglo ya registra pagos", async () => {
+    vi.mocked(arregloService.getByIdWithVehiculo).mockResolvedValue({
+      data: {
+        id: "a1",
+        estado: "EN_PROGRESO",
+        esta_pago: true,
+        total_cobrado: 15000,
+      } as unknown as Arreglo,
+      error: null,
+    });
+
+    const req = new NextRequest("http://localhost/api/arreglos/a1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        estado: "PRESUPUESTO",
+      }),
+    });
+
+    const response = await PUT(req, { params: Promise.resolve({ id: "a1" }) });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("No se puede cambiar a presupuesto un arreglo que ya registra pagos");
+    expect(arregloService.updateById).not.toHaveBeenCalled();
+  });
+
   it("PUT: si el JSON es inválido, responde 400", async () => {
     const req = new NextRequest("http://localhost/api/arreglos/a1", {
       method: "PUT",

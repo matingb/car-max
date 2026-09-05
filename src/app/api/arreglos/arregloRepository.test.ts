@@ -84,7 +84,7 @@ describe("supabaseArregloRepository", () => {
       expect(supabase.__chains.arreglos.gt).toHaveBeenCalledWith("total_cobrado", 0);
     });
 
-    it("traduce el estado pendiente a un arreglo sin cobros", async () => {
+    it("al filtrar por pagos PENDIENTE busca arreglos sin cobros y excluye presupuestos ya que no devengan cobranzas ni pueden estar pagos", async () => {
       const supabase = makeSupabase({ arreglos: { data: [], error: null } });
 
       const result = await supabaseArregloRepository.getArreglo(supabase, {
@@ -95,6 +95,18 @@ describe("supabaseArregloRepository", () => {
       expect(result.error).toBeNull();
       expect(supabase.__chains.arreglos.eq).toHaveBeenCalledWith("esta_pago", false);
       expect(supabase.__chains.arreglos.lte).toHaveBeenCalledWith("total_cobrado", 0);
+      expect(supabase.__chains.arreglos.neq).toHaveBeenCalledWith("estado", "PRESUPUESTO");
+    });
+
+    it("no excluye presupuestos cuando no se especifica filtro de estado o pago", async () => {
+      const supabase = makeSupabase({ arreglos: { data: [], error: null } });
+
+      const result = await supabaseArregloRepository.getArreglo(supabase, {
+        limit: 10,
+      });
+
+      expect(result.error).toBeNull();
+      expect(supabase.__chains.arreglos.neq).not.toHaveBeenCalled();
     });
   });
 
@@ -209,6 +221,34 @@ describe("supabaseArregloRepository", () => {
         montoPendienteParcial: 2000,
         montoPendiente: 8000,
       });
+    });
+  });
+
+  describe("listRecentActivities", () => {
+    it("aplica filtro para excluir arreglos en estado PRESUPUESTO y ordena por updated_at descendente", async () => {
+      const supabase = makeSupabase({
+        arreglos: {
+          data: [
+            {
+              id: "a1",
+              descripcion: "Cambio de aceite",
+              updated_at: "2026-08-28T10:00:00Z",
+              precio_final: 5000,
+              vehiculo: { patente: "AA123BB" },
+            },
+          ],
+          error: null,
+        },
+      });
+
+      const result = await supabaseArregloRepository.listRecentActivities(supabase, 5);
+
+      expect(supabase.from).toHaveBeenCalledWith("arreglos");
+      expect(supabase.__chains.arreglos.or).toHaveBeenCalledWith("estado.neq.PRESUPUESTO,estado.is.null");
+      expect(supabase.__chains.arreglos.order).toHaveBeenCalledWith("updated_at", { ascending: false });
+      expect(supabase.__chains.arreglos.limit).toHaveBeenCalledWith(5);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("a1");
     });
   });
 });

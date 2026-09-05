@@ -20,7 +20,7 @@ export default function PanelFacturacion({ ingresosData, granularity, stats, hea
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DashboardSectionCard title="Facturación" headerAction={headerAction}>
-                <GraficoIngresos data={ingresosData} granularity={granularity} />
+                <GraficoIngresos id="facturacion-principal" data={ingresosData} granularity={granularity} />
             </DashboardSectionCard>
 
             <DashboardSectionCard>
@@ -28,13 +28,13 @@ export default function PanelFacturacion({ ingresosData, granularity, stats, hea
                     <div css={styles.halfPanel}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Facturación por categoría</h4>
                         <div css={styles.chartWrapper}>
-                            <DesglosePieChart items={stats?.facturacionPorTipo} montoLabel="Facturación" />
+                            <DesglosePieChart id="facturacion-categoria" items={stats?.facturacionPorTipo} montoLabel="Facturación" />
                         </div>
                     </div>
                     <div css={styles.halfPanel}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Facturación por empleado</h4>
                         <div css={styles.chartWrapper}>
-                            <DesglosePieChart items={stats?.facturacionPorEmpleado} montoLabel="Facturación" />
+                            <DesglosePieChart id="facturacion-empleado" items={stats?.facturacionPorEmpleado} montoLabel="Facturación" />
                         </div>
                     </div>
                 </div>

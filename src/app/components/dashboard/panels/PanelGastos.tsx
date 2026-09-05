@@ -21,7 +21,7 @@ export default function PanelGastos({ gastosData, granularity, stats, headerActi
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DashboardSectionCard title="Evolución de Gastos" headerAction={headerAction}>
-                <GraficoGastos data={gastosData} granularity={granularity} />
+                <GraficoGastos id="gastos-principal" data={gastosData} granularity={granularity} />
             </DashboardSectionCard>
 
             <DashboardSectionCard>
@@ -29,13 +29,13 @@ export default function PanelGastos({ gastosData, granularity, stats, headerActi
                     <div css={styles.halfPanel}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Costo por categoría</h4>
                         <div style={styles.chartWrapper}>
-                            <DesglosePieChart items={stats?.costoPorTipo} montoLabel="Costo" variant="danger" />
+                            <DesglosePieChart id="gastos-categoria" items={stats?.costoPorTipo} montoLabel="Costo" variant="danger" />
                         </div>
                     </div>
                     <div css={styles.halfPanel}>
                         <h4 style={TYPOGRAPHY.dashboard.chartTitle}>Costo por empleado</h4>
                         <div style={styles.chartWrapper}>
-                            <DesglosePieChart items={stats?.costoPorEmpleado} montoLabel="Costo" variant="danger" />
+                            <DesglosePieChart id="gastos-empleado" items={stats?.costoPorEmpleado} montoLabel="Costo" variant="danger" />
                         </div>
                     </div>
                 </div>

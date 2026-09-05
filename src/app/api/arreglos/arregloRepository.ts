@@ -178,7 +178,7 @@ export const supabaseArregloRepository: ArregloRepository = {
     } else if (safeEstadoPago === "PARCIAL") {
       query = query.eq("esta_pago", false).gt("total_cobrado", 0);
     } else if (safeEstadoPago === "PENDIENTE") {
-      query = query.eq("esta_pago", false).lte("total_cobrado", 0);
+      query = query.eq("esta_pago", false).lte("total_cobrado", 0).neq("estado", "PRESUPUESTO");
     }
 
     const { ids: vehiculoIdsBySearch, error: searchVehiculoError } = await listVehiculoIdsBySearch(
@@ -393,6 +393,7 @@ export const supabaseArregloRepository: ArregloRepository = {
     let query = supabase
       .from("arreglos")
       .select("id, descripcion, updated_at, precio_final, vehiculo:vehiculos(patente)")
+      .or("estado.neq.PRESUPUESTO,estado.is.null")
       .order("updated_at", { ascending: false })
       .limit(limit);
     if (fromISO) query = query.gte("fecha", fromISO);

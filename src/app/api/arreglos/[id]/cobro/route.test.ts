@@ -25,6 +25,7 @@ const arreglo = {
   tenant_id: "44444444-4444-4444-8444-444444444444",
   esta_pago: true,
   precio_final: 25000,
+  estado: "TERMINADO",
 };
 
 function mockSupabase(rpc: ReturnType<typeof vi.fn>) {
@@ -34,6 +35,7 @@ function mockSupabase(rpc: ReturnType<typeof vi.fn>) {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           maybeSingle: vi.fn().mockResolvedValue({ data: arreglo, error: null }),
+          single: vi.fn().mockResolvedValue({ data: arreglo, error: null }),
         })),
       })),
     })),
@@ -245,6 +247,47 @@ describe("/api/arreglos/[id]/cobro", () => {
     expect(response.status).toBe(400);
     const body = await response.json();
     expect(body.error).toContain("mayor a 0");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rechaza el cobro si el arreglo está en estado PRESUPUESTO", async () => {
+    const rpc = vi.fn();
+    const supabaseMock = {
+      rpc,
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { ...arreglo, estado: "PRESUPUESTO" },
+              error: null,
+            }),
+            single: vi.fn().mockResolvedValue({
+              data: { ...arreglo, estado: "PRESUPUESTO" },
+              error: null,
+            }),
+          })),
+        })),
+      })),
+    } as unknown as SupabaseClient;
+
+    vi.mocked(createClient).mockResolvedValue(supabaseMock);
+
+    const response = await POST(
+      new NextRequest(`http://localhost/api/arreglos/${ARREGLO_ID}/cobro`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cuenta_financiera_id: CUENTA_ID,
+          fecha_cobro: "2026-07-31",
+          monto: 5000,
+        }),
+      }),
+      { params: Promise.resolve({ id: ARREGLO_ID }) }
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("No se pueden registrar pagos en un presupuesto");
     expect(rpc).not.toHaveBeenCalled();
   });
 });

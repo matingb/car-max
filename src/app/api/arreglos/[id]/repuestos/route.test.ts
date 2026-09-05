@@ -53,10 +53,10 @@ describe("POST /api/arreglos/[id]/repuestos", () => {
       p_cantidad: 2,
       p_monto_unitario: 1500,
       p_precio_compra: null,
-      p_cuenta_id: null,
-      p_idempotency_key: null,
       p_categoria_arreglo_id: null,
       p_empleado_id: null,
+      p_cuenta_id: null,
+      p_idempotency_key: null,
     });
     await expect(res.json()).resolves.toEqual({
       data: { operacion_id: "OP-1" },
@@ -157,10 +157,10 @@ describe("POST /api/arreglos/[id]/repuestos", () => {
       p_cantidad: 5,
       p_monto_unitario: 1500,
       p_precio_compra: 800,
-      p_cuenta_id: CUENTA_ID,
-      p_idempotency_key: IDEMPOTENCY_KEY,
       p_categoria_arreglo_id: null,
       p_empleado_id: null,
+      p_cuenta_id: CUENTA_ID,
+      p_idempotency_key: IDEMPOTENCY_KEY,
     });
   });
 
@@ -264,5 +264,67 @@ describe("POST /api/arreglos/[id]/repuestos", () => {
     });
 
     expect(res.status).toBe(409);
+  });
+
+  it("normaliza categoria_arreglo_id y empleado_id vacios a null sin dar error de validacion", async () => {
+    rpc.mockResolvedValue({ data: "OP-4", error: null });
+
+    const req = new Request("http://localhost/api/arreglos/A-1/repuestos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taller_id: "T-1",
+        stock_id: "S-1",
+        cantidad: 1,
+        monto_unitario: 1000,
+        categoria_arreglo_id: "",
+        empleado_id: "",
+      }),
+    });
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: "A-1" }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith("rpc_asignar_repuesto_existente_con_compra", {
+      p_arreglo_id: "A-1",
+      p_taller_id: "T-1",
+      p_stock_id: "S-1",
+      p_cantidad: 1,
+      p_monto_unitario: 1000,
+      p_precio_compra: null,
+      p_categoria_arreglo_id: null,
+      p_empleado_id: null,
+      p_cuenta_id: null,
+      p_idempotency_key: null,
+    });
+  });
+
+  it("mapea errores de permisos o expiración de sesión a 401", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { message: "JWT sin tenant_id" },
+    });
+
+    const req = new Request("http://localhost/api/arreglos/A-1/repuestos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taller_id: "T-1",
+        stock_id: "S-1",
+        cantidad: 1,
+        monto_unitario: 1000,
+      }),
+    });
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: "A-1" }),
+    });
+
+    expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toMatchObject({
+      error: "Tu sesión expiró o no tenés permisos para realizar esta acción",
+    });
   });
 });

@@ -32,6 +32,7 @@ export type DesglosePieChartDataItem = DesglosePieChartSubItem & {
 };
 
 type Props = {
+    id?: string;
     items?: DesgloseItem[];
     montoLabel?: string;
     variant?: "default" | "danger";
@@ -73,7 +74,7 @@ function getDistributedColor(idx: number, totalItems: number, palette: string[])
     const mappedIdx = Math.round((idx / (totalItems - 1)) * (palette.length - 1));
     return palette[mappedIdx];
 }
-export default function DesglosePieChart({ items, montoLabel = "Monto", variant = "default", maxItems = 5 }: Props) {
+export default function DesglosePieChart({ id = "desglose-pie", items, montoLabel = "Monto", variant = "default", maxItems = 5 }: Props) {
     const [showListOnMobile, setShowListOnMobile] = useState(false);
     const [expandedOtros, setExpandedOtros] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -199,7 +200,7 @@ export default function DesglosePieChart({ items, montoLabel = "Monto", variant 
         <div style={styles.container}>
             <div style={styles.row}>
                 <div style={styles.chartWrapper}>
-                    <ChartContainer config={series.config} style={styles.chartContainer}>
+                    <ChartContainer id={id} config={series.config} style={styles.chartContainer}>
                         <PieChart>
                             <ChartTooltip cursor={false} content={<GraficoTooltip titleKey="label" extraRows={extraRows} />} />
                             <Pie

@@ -162,6 +162,30 @@ describe("POST /api/arreglos", () => {
     );
   });
 
+  it("rechaza la creación de un arreglo en estado PRESUPUESTO marcado como pagado", async () => {
+    const cuentaId = "c0000000-0000-4000-8000-000000000001";
+    const idempotencyKey = "e0000000-0000-4000-8000-000000000001";
+    const req = new Request("http://localhost/api/arreglos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        createCreateArregloRequest({
+          estado: "PRESUPUESTO",
+          esta_pago: true,
+          cuenta_financiera_id: cuentaId,
+          idempotency_key: idempotencyKey,
+        })
+      ),
+    });
+
+    const response = await POST(req);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("No se puede registrar como pago un arreglo en estado PRESUPUESTO");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("bloquea creacion en TERMINADO cuando faltan required", async () => {
     formularioLookupResult = {
       data: {

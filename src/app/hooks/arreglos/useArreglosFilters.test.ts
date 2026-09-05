@@ -61,11 +61,12 @@ describe("filterArreglos", () => {
     expect(result.map((a) => a.id)).toEqual(["2"]);
   });
 
-  it("filtra por estado de pago pendiente, parcial y pagado", () => {
+  it("filtra por estado de pago pendiente, parcial y pagado, excluyendo presupuestos de los filtros de cobro ya que no pueden estar pagos", () => {
     const arreglos = [
       createArreglo({ id: "pendiente", esta_pago: false, total_cobrado: 0 }),
       createArreglo({ id: "parcial", esta_pago: false, total_cobrado: 500 }),
       createArreglo({ id: "pagado", esta_pago: true, total_cobrado: 1000 }),
+      createArreglo({ id: "presupuesto", estado: "PRESUPUESTO", esta_pago: false, total_cobrado: 0 }),
     ];
 
     expect(

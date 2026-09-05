@@ -8,6 +8,7 @@ import {
   buildArregloWhatsappMessage,
   buildWhatsappLink,
   normalizeWhatsappPhone,
+  type ArregloWhatsappOptions,
 } from "@/lib/whatsapp";
 import type { ArregloDetalleData } from "@/app/api/arreglos/[id]/route";
 
@@ -58,7 +59,7 @@ export function useWhatsAppMessage() {
   );
 
   const shareArreglo = useCallback(
-    async (data: ArregloDetalleData | null): Promise<void> => {
+    async (data: ArregloDetalleData | null, options?: ArregloWhatsappOptions): Promise<void> => {
       if (!data?.arreglo?.vehiculo?.id) {
         toast.error("Error", ERRORS.vehiculo_missing);
         return;
@@ -71,8 +72,11 @@ export function useWhatsAppMessage() {
         return;
       }
 
-      const tenantName = localStorage.getItem("tenant_name") || undefined;
-      const mensaje = buildArregloWhatsappMessage(data, tenantName);
+      const tenantName = options?.tenantName ?? (localStorage.getItem("tenant_name") || undefined);
+      const mensaje = buildArregloWhatsappMessage(data, {
+        ...options,
+        tenantName,
+      });
       if (!mensaje) {
         toast.error("Error", ERRORS.message_empty);
         return;

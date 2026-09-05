@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { CheckCircle2, XCircle, AlertCircle, Info, Loader2 } from "lucide-react";
 import { css } from "@emotion/react";
 import { BREAKPOINTS, COLOR } from "@/theme/theme";
-import { Arreglo, EstadoPagoArreglo } from "@/model/types";
+import { Arreglo, EstadoArreglo, EstadoPagoArreglo } from "@/model/types";
 import CobroArregloModal from "@/app/components/arreglos/CobroArregloModal";
 import { formatArs } from "@/lib/format";
 
 type Props = {
+  estado?: EstadoArreglo | string | null;
   estaPago?: boolean;
   totalCobrado?: number;
   saldoPendiente?: number;
@@ -42,6 +43,7 @@ export function calcularEstadoPago({
 }
 
 export default function ArregloPagoBadge({
+  estado,
   estaPago,
   totalCobrado,
   saldoPendiente,
@@ -55,6 +57,10 @@ export default function ArregloPagoBadge({
   const [loading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [cobroOpen, setCobroOpen] = useState(false);
+
+  if (estado === "PRESUPUESTO") {
+    return null;
+  }
 
   const isInteractive = Boolean(onClick || arregloId);
   const badgeSize = size === "sm" ? 14 : 16;

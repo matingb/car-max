@@ -18,11 +18,11 @@ import CuentaFinancieraAutocomplete, {
 import { UpdateArregloInput } from "@/clients/arreglosClient";
 import { toDateInputFormat, toISODateLocal } from "@/lib/fechas";
 import { formatPatenteConMarcaYModelo } from "@/lib/vehiculos";
-import { assembleClientePhone, buildArregloWhatsappMessage } from "@/lib/whatsapp";
 import { useTenant } from "@/app/providers/TenantProvider";
 import { useModalMessage } from "@/app/providers/ModalMessageProvider";
-import { useWhatsAppMessage } from "@/app/hooks/useWhatsAppMessage";
 import { useToast } from "@/app/providers/ToastProvider";
+import ArregloWhatsAppModal from "@/app/components/arreglos/ArregloWhatsAppModal";
+import type { ArregloDetalleData } from "@/app/api/arreglos/[id]/route";
 import { useInventario } from "@/app/providers/InventarioProvider";
 import { ESTADOS_ARREGLO, EstadoArreglo } from "@/model/types";
 import ArregloFormFields, {
@@ -52,14 +52,15 @@ export function normalizeArregloObservaciones(observaciones: string, isEdit: boo
 }
 
 export default function ArregloModal({ open, onClose, vehiculoId, initial, onSubmitSuccess }: Props) {
-  const { vehiculos, fetchAll: fetchVehiculos, fetchCliente } = useVehiculos();
+  const { vehiculos, fetchAll: fetchVehiculos } = useVehiculos();
   const { create, update, fetchById } = useArreglos();
   const { loading: isLoadingCuentas, createCuenta } = useCuentasFinancieras();
   const { tallerSeleccionadoId } = useTenant();
   const { inventario, isLoading: isInventarioLoading } = useInventario(tallerSeleccionadoId ?? undefined);
   const { confirm } = useModalMessage();
   const { success, error: toastError } = useToast();
-  const { share } = useWhatsAppMessage();
+  const [shareDetalle, setShareDetalle] = useState<ArregloDetalleData | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const { loadInventarioByTaller } = useInventario();
 
   const [cuentaDraft, setCuentaDraft] = useState<CuentaFinancieraDraft>(() => ({ ...EMPTY_CUENTA_FINANCIERA_DRAFT }));
@@ -181,16 +182,8 @@ export default function ArregloModal({ open, onClose, vehiculoId, initial, onSub
         toastError("Error", "No se pudo identificar el vehículo");
         return;
       }
-
-      const tenantName = localStorage.getItem("tenant_name") || undefined;
-      const mensaje = buildArregloWhatsappMessage(detalle, tenantName);
-      if (!mensaje) {
-        toastError("Error", "No se pudo generar el mensaje");
-        return;
-      }
-
-      const cliente = await fetchCliente(String(detalle.arreglo.vehiculo.id));
-      await share(mensaje, cliente ? assembleClientePhone(cliente) : undefined);
+      setShareDetalle(detalle);
+      setIsShareModalOpen(true);
     } catch (err: unknown) {
       toastError("Error", err instanceof Error ? err.message : "No se pudo compartir el arreglo");
     }
@@ -327,7 +320,8 @@ export default function ArregloModal({ open, onClose, vehiculoId, initial, onSub
   );
 
   return (
-    <Modal
+    <>
+      <Modal
       open={open}
       title={isEdit ? "Editar arreglo" : "Crear arreglo"}
       onClose={() => onClose()}
@@ -409,7 +403,16 @@ export default function ArregloModal({ open, onClose, vehiculoId, initial, onSub
           </div>
         ) : null}
       </div>
-    </Modal>
+      </Modal>
+      <ArregloWhatsAppModal
+        open={isShareModalOpen}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setShareDetalle(null);
+        }}
+        data={shareDetalle}
+      />
+    </>
   );
 }
 

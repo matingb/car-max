@@ -17,6 +17,7 @@ export default function PanelBalance({ ingresosBalanceData, gastosBalanceData, g
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <DashboardSectionCard title="Balance Histórico" headerAction={headerAction}>
                 <GraficoBalance
+                    id="balance-principal"
                     ingresosPorPeriodo={ingresosBalanceData}
                     gastosPorPeriodo={gastosBalanceData}
                     granularity={granularity}

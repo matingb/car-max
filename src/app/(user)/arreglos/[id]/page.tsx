@@ -404,8 +404,9 @@ export default function ArregloDetailsPage() {
         data={data}
         totalCalculado={totalCalculado}
         onOpenEdit={handleOpenEdit}
-        onArregloChange={(nuevoArreglo) => {
-          setData((prev) => (prev ? { ...prev, arreglo: nuevoArreglo } : prev));
+        onArregloChange={async (nuevoArreglo) => {
+          setData((prev) => (prev ? { ...prev, arreglo: { ...prev.arreglo, ...nuevoArreglo } } : prev));
+          await reload();
         }}
         canEmitFactura={canEmitFactura}
         facturaElectronica={facturaElectronica}
@@ -515,12 +516,12 @@ export default function ArregloDetailsPage() {
           open={openModal}
           onClose={handleCloseModal}
           onSubmitSuccess={async (nuevo) => {
-            setData((prev) => (prev ? { ...prev, arreglo: nuevo } : prev));
+            setData((prev) => (prev ? { ...prev, arreglo: { ...prev.arreglo, ...nuevo } } : prev));
+            await reload();
           }}
           vehiculoId={arreglo.vehiculo.id}
           initial={{
             id: arreglo.id,
-
             estado: arreglo.estado,
             fecha: arreglo.fecha,
             kilometraje_leido: arreglo.kilometraje_leido,

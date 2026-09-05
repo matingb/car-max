@@ -4,7 +4,11 @@ import { isValidUuid } from "@/lib/uuid";
 import type { Arreglo } from "@/model/types";
 import { statsService } from "@/app/api/dashboard/stats/dashboardStatsService";
 import { isValidDate, toISODateTimeWithCurrentTime } from "@/lib/fechas";
+import { logger } from "@/lib/logger";
 
+
+import { arregloService } from "../../arregloService";
+import { ServiceError } from "@/app/api/serviceError";
 
 type CobroRequest = {
   cuenta_financiera_id?: unknown;
@@ -24,10 +28,15 @@ async function fetchArreglo(
   supabase: Awaited<ReturnType<typeof createClient>>,
   id: string,
 ): Promise<{ data: Arreglo | null; error: string | null }> {
-  const { data, error } = await supabase.from("arreglos").select("*").eq("id", id).maybeSingle();
-  if (error) return { data: null, error: "No se pudo recuperar el arreglo" };
+  const { data, error } = await arregloService.getByIdWithVehiculo(supabase, id);
+  if (error) {
+    return {
+      data: null,
+      error: error === ServiceError.NotFound ? "Arreglo no encontrado" : "No se pudo recuperar el arreglo",
+    };
+  }
   if (!data) return { data: null, error: "Arreglo no encontrado" };
-  return { data: data as Arreglo, error: null };
+  return { data, error: null };
 }
 
 export async function POST(
@@ -93,6 +102,22 @@ export async function POST(
     if (singleMonto !== null && (!Number.isFinite(singleMonto) || singleMonto <= 0)) {
       return Response.json({ data: null, error: "monto a cobrar debe ser mayor a 0" } satisfies CobroResponse, { status: 400 });
     }
+  }
+
+  const existingArregloResult = await fetchArreglo(supabase, id);
+  if (existingArregloResult.error || !existingArregloResult.data) {
+    logger.error(`[POST /api/arreglos/${id}/cobro] Error al recuperar el arreglo ${id}.`, existingArregloResult.error);
+    return Response.json(
+      { data: null, error: existingArregloResult.error ?? "Arreglo no encontrado" } satisfies CobroResponse,
+      { status: existingArregloResult.error === "Arreglo no encontrado" ? 404 : 500 }
+    );
+  }
+  if (existingArregloResult.data.estado === "PRESUPUESTO") {
+    logger.warn(`[POST /api/arreglos/${id}/cobro] Se intentó cobrar el arreglo ${id} que se encuentra en estado PRESUPUESTO.`);
+    return Response.json(
+      { data: null, error: "No se pueden registrar pagos en un presupuesto" } satisfies CobroResponse,
+      { status: 400 }
+    );
   }
 
   const { error: rpcError } = await supabase.rpc("rpc_finanzas_cobrar_arreglo", {

@@ -218,5 +218,21 @@ describe("ArregloItem", () => {
     expect(screen.getByText("LG")).toBeInTheDocument();
     expect(screen.getByText("PP")).toBeInTheDocument();
   });
+
+  it("no muestra el texto Pago pendiente cuando el arreglo está en estado PRESUPUESTO", () => {
+    talleresMock = [{ id: "t1", nombre: "Taller 1", ubicacion: "A" }];
+
+    render(
+      <ArregloItem
+        arreglo={createArreglo({
+          estado: "PRESUPUESTO",
+          esta_pago: false,
+        })}
+      />
+    );
+
+    expect(screen.queryByText("Pago pendiente")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pagado")).not.toBeInTheDocument();
+  });
 });
 

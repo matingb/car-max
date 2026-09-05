@@ -4,55 +4,150 @@ import type { Turno } from "@/model/types";
 import { formatPatenteConMarcaYModelo } from "@/lib/vehiculos";
 import { safeNumber } from "@/lib/numbers";
 
-export function buildArregloWhatsappMessage(data: ArregloDetalleData, tenantName?: string): string {
+export interface ArregloWhatsappOptions {
+	tenantName?: string;
+	mostrarDetalleItems?: boolean;
+	mostrarPreciosItems?: boolean;
+	mostrarSubtotales?: boolean;
+	mostrarTotal?: boolean;
+	incluirKm?: boolean;
+	incluirObservaciones?: boolean;
+}
+
+export function buildArregloWhatsappMessage(
+	data: ArregloDetalleData,
+	tenantNameOrOptions?: string | ArregloWhatsappOptions
+): string {
 	if (!data?.arreglo) return "";
+
+	const options: ArregloWhatsappOptions =
+		typeof tenantNameOrOptions === "string"
+			? { tenantName: tenantNameOrOptions }
+			: tenantNameOrOptions ?? {};
+
+	const {
+		tenantName,
+		mostrarDetalleItems = true,
+		mostrarPreciosItems = true,
+		mostrarSubtotales = false,
+		mostrarTotal = true,
+		incluirKm = true,
+		incluirObservaciones = true,
+	} = options;
 
 	const arreglo = data.arreglo;
 	const detalles = Array.isArray(data.detalles) ? data.detalles : [];
 	const repuestosLineas = flattenAsignacionesLineas(data);
+
+	const isPagado =
+		(arreglo.total_cobrado || 0) >= (arreglo.precio_final || 0) && (arreglo.precio_final || 0) > 0;
+
 	const lines: string[] = [];
-	const normalizedTenant = (tenantName ?? "").trim();
-	const isPagado = (arreglo.total_cobrado || 0) >= (arreglo.precio_final || 0) && (arreglo.precio_final || 0) > 0;
-	const header = isPagado ? "Detalle de Arreglo" : "Presupuesto de Arreglo";
 
-	lines.push(`*${header}${normalizedTenant ? ` - ${normalizedTenant}` : ""}*`);
+	// 1. Cabecera
+	const esTecnico = !mostrarTotal && !mostrarPreciosItems && !mostrarSubtotales;
+	lines.push(buildHeaderLine(isPagado, esTecnico, tenantName));
 
-	lines.push(`🚗 Patente ${arreglo.vehiculo?.patente || "-"}`);
-	if (arreglo.kilometraje_leido) {
-		lines.push(`⏱️ KM actual ${arreglo.kilometraje_leido}`);
-	}
-	if (arreglo.observaciones) {
-		lines.push(`📝 Observaciones: ${arreglo.observaciones}`);
-	}
+	// 2. Información del vehículo
+	const vehiculoLines = buildVehiculoInfoLines(arreglo, { incluirKm, incluirObservaciones });
+	lines.push(...vehiculoLines);
 	lines.push("");
 
-	if (repuestosLineas.length) {
-		lines.push("📦 *Repuestos:*");
-		repuestosLineas.forEach((r) => {
-			const cantidad = safeNumber(r.cantidad);
-			const monto = safeNumber(r.monto_unitario);
-			const total = cantidad * monto;
-			const producto = r.producto?.nombre || r.producto?.codigo || "Repuesto";
-			const qty = cantidad ? ` x${cantidad}` : "";
-			lines.push(`• ${producto}${qty} - ${formatArs(total, { maxDecimals: 0, minDecimals: 0 })}`);
-		});
-		lines.push("");
+	// 3. Totales calculados
+	const totals = calculateArregloTotals(detalles, repuestosLineas, arreglo.precio_final);
+
+	// 4. Secciones
+	if (mostrarDetalleItems) {
+		// Repuestos
+		if (repuestosLineas.length) {
+			lines.push(
+				...buildRepuestosSectionLines(
+					repuestosLineas,
+					mostrarPreciosItems,
+					mostrarSubtotales,
+					totals.subtotalRepuestos
+				)
+			);
+			lines.push("");
+		}
+
+		// Servicios
+		if (detalles.length) {
+			lines.push(
+				...buildServiciosSectionLines(
+					detalles,
+					mostrarPreciosItems,
+					mostrarSubtotales,
+					totals.subtotalServicios
+				)
+			);
+			lines.push("");
+		}
+	} else if (mostrarSubtotales) {
+		// Modo sin detalle pero con subtotales agrupados
+		const montosLines = buildSoloMontosSectionLines(
+			totals.subtotalRepuestos,
+			totals.subtotalServicios,
+			repuestosLineas.length > 0,
+			detalles.length > 0
+		);
+		if (montosLines.length) {
+			lines.push(...montosLines);
+			lines.push("");
+		}
 	}
 
-	if (detalles.length) {
-		lines.push("👨‍🔧 *Servicios:*");
-		detalles.forEach((d) => {
-			const cantidad = safeNumber(d.cantidad);
-			const valor = safeNumber(d.valor);
-			const total = cantidad * valor;
-			const label = String(d.descripcion ?? "").trim() || "Servicio";
-			const qty = cantidad ? ` x${cantidad}` : "";
-			lines.push(`• ${label}${qty} - ${formatArs(total, { maxDecimals: 0, minDecimals: 0 })}`);
-		});
-		lines.push("");
+	// 5. Total final
+	if (mostrarTotal) {
+		lines.push(`*Total arreglo ${formatArs(totals.total, { maxDecimals: 0, minDecimals: 0 })}*`);
+	} else {
+		// Quitar línea vacía sobrante si terminó con espacio
+		if (lines[lines.length - 1] === "") {
+			lines.pop();
+		}
 	}
 
-	const subtotalServicios = detalles.reduce(
+	return lines.join("\n");
+}
+
+function buildHeaderLine(
+	isPagado: boolean,
+	esTecnico: boolean,
+	tenantName?: string
+): string {
+	const normalizedTenant = (tenantName ?? "").trim();
+	const header = esTecnico
+		? "Detalle de Arreglo"
+		: isPagado
+		? "Detalle de Arreglo"
+		: "Presupuesto de Arreglo";
+	return `*${header}${normalizedTenant ? ` - ${normalizedTenant}` : ""}*`;
+}
+
+function buildVehiculoInfoLines(
+	arreglo: ArregloDetalleData["arreglo"],
+	options: { incluirKm: boolean; incluirObservaciones: boolean }
+): string[] {
+	const lines: string[] = [];
+	lines.push(`🚗 Patente ${arreglo.vehiculo?.patente || "-"}`);
+
+	if (options.incluirKm && arreglo.kilometraje_leido) {
+		lines.push(`⏱️ KM actual ${arreglo.kilometraje_leido}`);
+	}
+
+	if (options.incluirObservaciones && arreglo.observaciones) {
+		lines.push(`📝 Observaciones: ${arreglo.observaciones}`);
+	}
+
+	return lines;
+}
+
+function calculateArregloTotals(
+	detalles: ArregloDetalleData["detalles"],
+	repuestosLineas: AsignacionArregloLinea[],
+	precioFinal: number
+): { subtotalServicios: number; subtotalRepuestos: number; total: number } {
+	const subtotalServicios = (detalles ?? []).reduce(
 		(acc, d) => acc + safeNumber(d.valor) * safeNumber(d.cantidad),
 		0
 	);
@@ -61,10 +156,76 @@ export function buildArregloWhatsappMessage(data: ArregloDetalleData, tenantName
 		0
 	);
 	const totalCalculado = subtotalServicios + subtotalRepuestos;
-	const total = arreglo.precio_final > 0 ? arreglo.precio_final : totalCalculado;
-	lines.push(`*Total arreglo ${formatArs(total, { maxDecimals: 0, minDecimals: 0 })}*`);
+	const total = precioFinal > 0 ? precioFinal : totalCalculado;
 
-	return lines.join("\n");
+	return { subtotalServicios, subtotalRepuestos, total };
+}
+
+function buildItemLine(label: string, cantidad: number, totalMonto?: number): string {
+	const qty = cantidad ? ` x${cantidad}` : "";
+	const price =
+		totalMonto != null ? ` - ${formatArs(totalMonto, { maxDecimals: 0, minDecimals: 0 })}` : "";
+	return `• ${label}${qty}${price}`;
+}
+
+function buildRepuestosSectionLines(
+	repuestosLineas: AsignacionArregloLinea[],
+	showItemPrices: boolean,
+	showSubtotal: boolean,
+	subtotal: number
+): string[] {
+	const lines: string[] = ["📦 *Repuestos:*"];
+	repuestosLineas.forEach((r) => {
+		const cantidad = safeNumber(r.cantidad);
+		const monto = safeNumber(r.monto_unitario);
+		const total = cantidad * monto;
+		const producto = r.producto?.nombre || r.producto?.codigo || "Repuesto";
+		lines.push(buildItemLine(producto, cantidad, showItemPrices ? total : undefined));
+	});
+	if (showSubtotal) {
+		lines.push(`_Subtotal repuestos: ${formatArs(subtotal, { maxDecimals: 0, minDecimals: 0 })}_`);
+	}
+	return lines;
+}
+
+function buildServiciosSectionLines(
+	detalles: NonNullable<ArregloDetalleData["detalles"]>,
+	showItemPrices: boolean,
+	showSubtotal: boolean,
+	subtotal: number
+): string[] {
+	const lines: string[] = ["👨‍🔧 *Servicios:*"];
+	detalles.forEach((d) => {
+		const cantidad = safeNumber(d.cantidad);
+		const valor = safeNumber(d.valor);
+		const total = cantidad * valor;
+		const label = String(d.descripcion ?? "").trim() || "Servicio";
+		lines.push(buildItemLine(label, cantidad, showItemPrices ? total : undefined));
+	});
+	if (showSubtotal) {
+		lines.push(`_Subtotal mano de obra: ${formatArs(subtotal, { maxDecimals: 0, minDecimals: 0 })}_`);
+	}
+	return lines;
+}
+
+function buildSoloMontosSectionLines(
+	subtotalRepuestos: number,
+	subtotalServicios: number,
+	hasRepuestos: boolean,
+	hasServicios: boolean
+): string[] {
+	const lines: string[] = ["💰 *Resumen:*"];
+	if (hasRepuestos) {
+		lines.push(
+			`• Repuestos: ${formatArs(subtotalRepuestos, { maxDecimals: 0, minDecimals: 0 })}`
+		);
+	}
+	if (hasServicios) {
+		lines.push(
+			`• Mano de obra: ${formatArs(subtotalServicios, { maxDecimals: 0, minDecimals: 0 })}`
+		);
+	}
+	return lines;
 }
 
 export function buildTurnoWhatsappMessage(turno: Turno, tenantName?: string): string {

@@ -96,6 +96,7 @@ export default function ArregloItem({
               </h4>
               <div style={styles.badgesGroup}>
                 <ArregloPagoBadge
+                  estado={arreglo.estado}
                   estaPago={arreglo.esta_pago}
                   totalCobrado={arreglo.total_cobrado}
                   saldoPendiente={arreglo.saldo_pendiente}

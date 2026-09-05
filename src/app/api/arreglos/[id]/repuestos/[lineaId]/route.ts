@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { repuestosService } from "@/app/api/arreglos/repuestos/repuestosService";
 import { statsService } from "@/app/api/dashboard/stats/dashboardStatsService";
 import { syncArregloDescripcion } from "@/app/api/arreglos/arregloDescripcionService";
+import { logger } from "@/lib/logger";
 
 export type DeleteRepuestoLineaResponse = {
   error?: string | null;
@@ -36,7 +37,7 @@ export async function DELETE(
     await repuestosService.getOperacionLineaById(supabase, lineaId);
 
   if (lineaErr) {
-    console.error("Error buscando operaciones_lineas:", lineaErr);
+    logger.error("Error buscando operaciones_lineas:", lineaErr);
     if (isUnauthorizedSupabaseError(lineaErr)) {
       return Response.json(
         { error: "Tu sesión expiró o no tenés permisos para eliminar este repuesto." } satisfies DeleteRepuestoLineaResponse,
@@ -59,7 +60,7 @@ export async function DELETE(
     });
 
   if (asigErr) {
-    console.error("Error validando operaciones_asignacion_arreglo:", asigErr);
+    logger.error("Error validando operaciones_asignacion_arreglo:", asigErr);
     if (isUnauthorizedSupabaseError(asigErr)) {
       return Response.json(
         { error: "Tu sesión expiró o no tenés permisos para eliminar este repuesto." } satisfies DeleteRepuestoLineaResponse,
@@ -81,7 +82,7 @@ export async function DELETE(
   );
 
   if (error) {
-    console.error("Error rpc_delete_asignacion_arreglo_linea:", error);
+    logger.error("Error rpc_delete_asignacion_arreglo_linea:", error);
     if (isUnauthorizedSupabaseError(error)) {
       return Response.json(
         { error: "Tu sesión expiró o no tenés permisos para eliminar este repuesto." } satisfies DeleteRepuestoLineaResponse,

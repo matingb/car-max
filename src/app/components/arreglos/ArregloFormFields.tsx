@@ -257,7 +257,11 @@ export default function ArregloFormFields({
             value={values.estado}
             onChange={(next) => {
               if ((ESTADOS_ARREGLO as string[]).includes(next)) {
-                onValuesChange({ estado: next as EstadoArreglo });
+                const nextEstado = next as EstadoArreglo;
+                onValuesChange({
+                  estado: nextEstado,
+                  ...(nextEstado === "PRESUPUESTO" ? { estaPago: false } : {}),
+                });
               }
             }}
             placeholder="Seleccionar estado"
@@ -294,22 +298,25 @@ export default function ArregloFormFields({
             onChange={(e) => onValuesChange({ fecha: e.target.value })}
           />
         </div>
-        <div css={styles.pagoField}>
-          <label style={styles.label}>¿Esta pago?</label>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              height: 44,
-            }}
-          >
-            <ArregloPagoBadge
-              estaPago={values.estaPago}
-              onClick={isEdit ? undefined : () => onValuesChange({ estaPago: !values.estaPago })}
-              size="md"
-            />
+        {values.estado !== "PRESUPUESTO" && (
+          <div css={styles.pagoField}>
+            <label style={styles.label}>¿Esta pago?</label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                height: 44,
+              }}
+            >
+              <ArregloPagoBadge
+                estado={values.estado}
+                estaPago={values.estaPago}
+                onClick={isEdit ? undefined : () => onValuesChange({ estaPago: !values.estaPago })}
+                size="md"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {!isEdit ? (

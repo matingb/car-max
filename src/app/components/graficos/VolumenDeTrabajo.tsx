@@ -14,6 +14,7 @@ import { formatNumberAr } from "@/lib/format";
 import GraficoTooltip from "./GraficoTooltip";
 
 type Props = {
+    id?: string;
     items?: Array<{
         label: string;
         cantidad: number;
@@ -37,6 +38,7 @@ const TIPOS_EXTRA_ROWS = [
 ];
 
 export default function VolumenDeTrabajo({
+    id = "volumen-trabajo",
     items,
 }: Props) {
     const tipoSeries = useMemo(() => {
@@ -65,13 +67,15 @@ export default function VolumenDeTrabajo({
             COLOR.GRAPHICS.QUINARY,
         ];
 
-        const config: ChartConfig = {};
-        keys.forEach((key, idx) => {
-            config[key] = {
-                label: safeTipos[idx] ?? key,
-                color: colors[idx % colors.length],
-            };
-        });
+        const config: ChartConfig = Object.fromEntries(
+            keys.map((key, idx) => [
+                key,
+                {
+                    label: safeTipos[idx] ?? key,
+                    color: colors[idx % colors.length],
+                },
+            ])
+        );
 
         return {
             config,
@@ -81,6 +85,7 @@ export default function VolumenDeTrabajo({
 
     return (
         <ChartContainer
+            id={id}
             config={tipoSeries.config}
             style={{ width: "100%" }}
         >
