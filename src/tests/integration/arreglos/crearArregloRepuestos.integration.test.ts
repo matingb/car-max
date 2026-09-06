@@ -1,9 +1,15 @@
 import { describe, it, expect, assert } from "vitest";
+import type { NextRequest } from "next/server";
 import { POST, type CreateArregloResponse } from "@/app/api/arreglos/route";
+import {
+  DELETE as deleteRepuestoLineaRoute,
+  type DeleteRepuestoLineaResponse,
+} from "@/app/api/arreglos/[id]/repuestos/[lineaId]/route";
 import type { ProductoRow as Producto } from "@/app/api/productos/productosService";
 import { stocksService, type StockRow as Stock } from "@/app/api/stocks/stocksService";
 import { supabaseArregloRepository } from "@/app/api/arreglos/arregloRepository";
 import { operacionesService } from "@/app/api/operaciones/operacionesService";
+import { repuestosService } from "@/app/api/arreglos/repuestos/repuestosService";
 import { testClient, SEED } from "@/tests/integration";
 import { createCreateArregloRequest } from "@/tests/factories";
 
@@ -79,6 +85,24 @@ async function postArreglo(payload: unknown): Promise<CreateArregloResponse> {
 
   const response = await POST(req);
   expect(response.status).toBe(201);
+  return response.json();
+}
+
+async function deleteRepuestoLinea(
+  arregloId: string,
+  lineaId: string
+): Promise<DeleteRepuestoLineaResponse> {
+  const req = new Request(
+    `http://localhost:3000/api/arreglos/${arregloId}/repuestos/${lineaId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  const response = await deleteRepuestoLineaRoute(req as unknown as NextRequest, {
+    params: Promise.resolve({ id: arregloId, lineaId }),
+  });
+  expect(response.status).toBe(200);
   return response.json();
 }
 
@@ -170,6 +194,75 @@ describe("Integration - Creación de arreglos", () => {
     expect(operacion.operaciones_lineas[0].stock_id).toBe(stockId);
     expect(operacion.operaciones_lineas[0].cantidad).toBe(stockAUsar);
     expect(operacion.operaciones_lineas[0].monto_unitario).toBe(precioUnitario);
+  });
+
+  it("Cuando se elimina un repuesto de un arreglo, se revierte la asignación y devuelve el item al stock total", async () => {
+    const stockAUsar = 3;
+    const precioUnitario = 6500;
+    const precioFinalTotal = stockAUsar * precioUnitario;
+    const cantidadInicial = 200;
+
+    const { stockId } = await DadoQueExisteUnProductoConStock({
+      stock: {
+        cantidad: cantidadInicial,
+        taller_id: SEED.tallerId,
+      },
+    });
+
+    const requestPayload = createCreateArregloRequest({
+      vehiculo_id: SEED.vehiculoId,
+      taller_id: SEED.tallerId,
+      precio_final: precioFinalTotal,
+      repuestos: [
+        {
+          stock_id: stockId,
+          cantidad: stockAUsar,
+          monto_unitario: precioUnitario,
+        },
+      ],
+    });
+
+    const body = await postArreglo(requestPayload);
+    const arregloId = body.data!.id;
+
+    const { data: stockDescontado } = await stocksService.getById(
+      client,
+      stockId
+    );
+    assert(stockDescontado);
+    expect(stockDescontado.cantidad).toBe(cantidadInicial - stockAUsar);
+
+    const { data: operacionIds } =
+      await supabaseArregloRepository.listOperacionIdsByArregloId(client, arregloId);
+    assert(operacionIds && operacionIds[0]);
+
+    const { data: operacion } = await operacionesService.getById(
+      client,
+      operacionIds[0]
+    );
+    assert(operacion?.operaciones_lineas && operacion.operaciones_lineas[0]);
+    const lineaId = operacion.operaciones_lineas[0].id;
+
+    const deleteResponse = await deleteRepuestoLinea(arregloId, lineaId);
+    expect(deleteResponse.error).toBeNull();
+
+    const { data: stockFinal } = await stocksService.getById(
+      client,
+      stockId
+    );
+    assert(stockFinal);
+    expect(stockFinal.cantidad).toBe(cantidadInicial);
+
+    const { data: lineaEliminada } = await repuestosService.getOperacionLineaById(
+      client,
+      lineaId
+    );
+    expect(lineaEliminada).toBeNull();
+
+    const { data: operacionIdsPostDelete } =
+      await supabaseArregloRepository.listOperacionIdsByArregloId(client, arregloId);
+    assert(operacionIdsPostDelete);
+    expect(operacionIdsPostDelete).toHaveLength(0);
   });
 });
 
