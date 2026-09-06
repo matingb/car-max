@@ -12,6 +12,7 @@ export default defineConfig({
     globals: true,
     css: false,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules", "dist", "**/*.integration.test.ts"],
     restoreMocks: true,
   },
 });

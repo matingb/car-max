@@ -24,5 +24,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/(user)/clientes/layouttsx"],
-  "exclude": ["node_modules", "supabase"]
+  "exclude": ["node_modules", "supabase", "configuración-de-facturación", "configuración-de-facturación"]
 }

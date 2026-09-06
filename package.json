@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "push": "next build && git push",
     "up": "next build --turbopack && next start"
   },
