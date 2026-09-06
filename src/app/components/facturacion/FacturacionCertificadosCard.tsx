@@ -74,16 +74,6 @@ export default function FacturacionCertificadosCard({
                 {formatDateLabel(credenciales.vencimiento, "-")}
               </strong>
             </div>
-
-            <div style={styles.metadataItem}>
-              <span style={styles.metadataLabel}>Fingerprint SHA-256</span>
-              <strong
-                style={{ ...styles.metadataValue, ...styles.mono }}
-                title={credenciales.fingerprintSha256 ?? ""}
-              >
-                {credenciales.fingerprintSha256 ?? "-"}
-              </strong>
-            </div>
           </div>
         )}
 

@@ -15,6 +15,7 @@ export interface DropdownOption {
     style?: React.CSSProperties;
     dataTestId?: string;
     disabled?: boolean;
+    id?: string;
   }
 
 export default function Dropdown({
@@ -24,6 +25,7 @@ export default function Dropdown({
     style,
     dataTestId,
     disabled = false,
+    id,
 }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -110,6 +112,7 @@ export default function Dropdown({
     return (
         <div ref={containerRef} style={{ ...styles.container, ...style }}>
             <button
+                id={id}
                 type="button"
                 role="button"
                 aria-haspopup="listbox"

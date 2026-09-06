@@ -208,7 +208,7 @@ export default function FacturaElectronicaModal({ open, arregloId, operacionId, 
           </section>
           {preflight.mensaje && factura?.estado !== "RECHAZADA" ? <div style={styles.warning}>{preflight.mensaje}</div> : null}
           {factura?.estado === "INCIERTA" ? <div style={styles.warning}>La emisión quedó incierta. No se asignará otro número hasta reconciliar el comprobante candidato.</div> : null}
-          {factura?.estado !== "AUTORIZADA" ? <div style={styles.immutability}><ExternalLink size={16} /> Al autorizarse, no podrán modificarse líneas, precios, vehículo, cliente asociado ni eliminarse el arreglo.</div> : null}
+          {factura?.estado !== "AUTORIZADA" ? <div style={styles.immutability}><ExternalLink size={16} />Luego de autorizar la factura, ya no podrán realizarse modificaciones sobre el arreglo.</div> : null}
         </div>
       ) : null}
     </Modal>

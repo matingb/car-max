@@ -169,13 +169,7 @@ export const CONDICIONES_IVA_RECEPTOR: Array<{ id: CondicionIvaReceptorId; label
   { id: 4, label: "IVA exento" },
   { id: 5, label: "Consumidor final" },
   { id: 6, label: "Monotributista" },
-  { id: 7, label: "Sujeto no categorizado" },
-  { id: 8, label: "Proveedor del exterior" },
-  { id: 9, label: "Cliente del exterior" },
-  { id: 10, label: "IVA liberado - Ley 19.640" },
-  { id: 13, label: "Monotributista social" },
   { id: 15, label: "IVA no alcanzado" },
-  { id: 16, label: "Monotributo trabajador promovido" },
 ];
 
 export const TIPOS_DOCUMENTO_FISCAL: Array<{ id: DocumentoFiscalTipo; label: string }> = [

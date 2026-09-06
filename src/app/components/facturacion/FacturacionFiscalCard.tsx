@@ -3,6 +3,7 @@
 import React from "react";
 import { COLOR, REQUIRED_ICON_COLOR } from "@/theme/theme";
 import type { CondicionIvaEmisor } from "@/lib/facturacion/types";
+import Dropdown from "@/app/components/ui/Dropdown";
 
 interface FacturacionFiscalCardProps {
   cuit: string;
@@ -80,24 +81,19 @@ export default function FacturacionFiscalCard({
             <label style={styles.label} htmlFor="facturacion-condicion-iva">
               Condición frente al IVA <span style={styles.required}>*</span>
             </label>
-            <select
+            <Dropdown
               id="facturacion-condicion-iva"
-              required
               disabled={disabled}
               value={condicionIvaEmisor}
-              onChange={(e) =>
+              options={CONDICION_IVA_OPTIONS}
+              onChange={(value) =>
                 onChange({
-                  condicionIvaEmisor: e.target.value as CondicionIvaEmisor,
+                  condicionIvaEmisor: value as CondicionIvaEmisor,
                 })
               }
-              style={styles.select}
-            >
-              {CONDICION_IVA_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              style={styles.dropdown}
+              dataTestId="facturacion-condicion-iva"
+            />
           </div>
 
           <div style={styles.field}>
@@ -201,17 +197,8 @@ const styles = {
     outline: "none",
     transition: "border-color 0.2s, box-shadow 0.2s",
   },
-  select: {
+  dropdown: {
     width: "100%",
     height: 42,
-    padding: "0 12px",
-    borderRadius: 8,
-    border: `1px solid ${COLOR.BORDER.SUBTLE}`,
-    background: COLOR.INPUT.PRIMARY.BACKGROUND,
-    color: COLOR.TEXT.PRIMARY,
-    fontSize: 14,
-    outline: "none",
-    cursor: "pointer",
-    transition: "border-color 0.2s, box-shadow 0.2s",
   },
 } as const;
