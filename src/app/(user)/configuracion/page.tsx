@@ -245,7 +245,6 @@ const styles = {
     padding: "16px 0 40px",
   },
   container: {
-    maxWidth: 920,
     display: "flex",
     flexDirection: "column" as const,
     gap: 24,
